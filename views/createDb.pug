@@ -1,0 +1,10 @@
+doctype html
+html
+  head
+    title 创建数据库
+  body
+    h1 创建数据库
+    form(action="/databases/create" method="POST")
+      label(for="dbName") 数据库名称:
+      input(type="text" id="dbName" name="dbName" required)
+      button(type="submit") 创建数据库

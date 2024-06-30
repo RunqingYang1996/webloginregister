@@ -1,0 +1,22 @@
+doctype html
+html
+  head
+    title 数据库管理
+  body
+    h1 数据库管理
+    if user.role === 'admin' || user.role === 'user'
+      form(action="/databases/create" method="POST")
+        label(for="dbName") 数据库名称:
+        input(type="text" id="dbName" name="dbName" required)
+        button(type="submit") 创建数据库
+    table
+      tr
+        th 数据库名称
+        th 操作
+      each db in databases
+        tr
+          td= db.name
+          td
+            if user && user.databaseAccess && user.databaseAccess.includes(db.name)
+              form(action=`/databases/delete/${db.name}` method="POST")
+                button(type="submit") 删除

@@ -1,0 +1,14 @@
+doctype html
+html
+  head
+    title 注册
+  body
+    h1 注册
+    form(action="/auth/register" method="POST")
+      label(for="username") 用户名:
+      input(type="text" id="username" name="username" required)
+      label(for="password") 密码:
+      input(type="password" id="password" name="password" required)
+      button(type="submit") 注册
+    p
+      a(href="/auth/login") 登录
