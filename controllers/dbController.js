@@ -12,21 +12,21 @@ exports.getDatabases = async (req, res) => {
 };
 
 exports.showCreateDbForm = (req, res) => {
-  const { username, password } = req.body;
+  //const { username, password } = req.body;
   res.render('createDb', { user: req.user });
 };
 
 exports.createDatabase = async (req, res) => {
   const { dbName } = req.body;
-  const { username, password } = req.body;
+  //const { username, password } = req.body;
   try {
     console.log(`创建数据库: ${dbName}`); // 调试日志
     const db = mongoose.connection.useDb(dbName);
     await db.collection('dummyCollection').insertOne({ dummy: 'data' });
 
     // 更新用户的数据库访问权限
-    //const user = await User.findById(req.user._id);
-    const user = await User.findOne({ username });
+    const user = await User.findById(req.user._id);
+    //const user = await User.findOne({ username });
     if (!user) {
       console.error(`用户未找到: ${req.user._id}`); // 调试日志
       return res.status(404).send('用户未找到');
@@ -46,10 +46,10 @@ exports.createDatabase = async (req, res) => {
 
 exports.deleteDatabase = async (req, res) => {
   const { dbName } = req.params;
-  const { username, password } = req.body;
+  //const { username, password } = req.body;
   try {
-    //const user = await User.findById(req.user._id);
-    const user = await User.findOne({ username });
+    const user = await User.findById(req.user._id);
+    //const user = await User.findOne({ username });
     if (!user) {
       console.error(`用户未找到: ${req.user._id}`); // 调试日志
       return res.status(404).send('用户未找到');
