@@ -6,7 +6,9 @@ import { FaceLandmarker,
           FilesetResolver,
           Landmark,
           PoseLandmarker,
-          PoseLandmarkerOptions
+          PoseLandmarkerOptions,
+          HandLandmarker,
+          HandLandmarkerOptions
         } from "@mediapipe/tasks-vision";
 import { Color, Euler, Matrix4, Vector2, Vector3} from 'three';
 import { Canvas, useFrame, useGraph } from '@react-three/fiber';
@@ -16,6 +18,7 @@ import { useDropzone } from 'react-dropzone';
 let video: HTMLVideoElement;
 let faceLandmarker: FaceLandmarker;
 let poseLandmarker: PoseLandmarker;
+let handLandmarker: HandLandmarker;
 let lastVideoTime = -1;
 let blendshapes: any[] = [];
 let rotation: Euler;
@@ -56,6 +59,15 @@ const poseoptions: PoseLandmarkerOptions = {
   numPoses: 2,
 };
 
+const handoptions: HandLandmarkerOptions = {
+  baseOptions: {
+    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+    delegate: "GPU"
+  },
+  runningMode: "VIDEO",
+  numHands: 2,
+};
+
 function calculateVector(p1:Landmark, p2:Landmark) {
   return {
       x: p2.x - p1.x,
@@ -66,6 +78,15 @@ function calculateVector(p1:Landmark, p2:Landmark) {
 
 function dotProduct(v1:Landmark, v2:Landmark) {
   return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+function calculateCrossProductZComponent(vectorA:Vector3, vectorB:Vector3) {
+  // 计算叉乘向量
+  const crossProduct = new Vector3();
+  crossProduct.crossVectors(vectorA, vectorB);
+
+  // 返回z方向的分量
+  return crossProduct.z;
 }
 
 function vectorMagnitude(v:Landmark) {
@@ -108,7 +129,12 @@ function angleBetween2DCoords(p1:Landmark, p2:Landmark, p3:Landmark, plane:strin
 
   return angleDeg;
 }
+function mapRange(input:any, inputMin:any, inputMax:any, outputMin:any, outputMax:any) {
+  // 线性映射公式
+  const output = ((input - inputMin) / (inputMax - inputMin)) * (outputMax - outputMin) + outputMin;
 
+  return output;
+}
 function calculateDirectionVector(point1: Landmark, point2: Landmark) {
   return new Vector3(point2.x - point1.x, point2.y - point1.y, point2.z - point1.z);
 }
@@ -123,6 +149,9 @@ function directionVectorToEuler(vector: Vector3) {
   const rotationMatrix = new Matrix4().lookAt(new Vector3(0, 0, 0), vector, up);
   const rotation = new Euler().setFromRotationMatrix(rotationMatrix);
   return rotation;
+}
+function interpolateRotation(preRotation:any, curRotation:any, alpha:any) {
+  return alpha * curRotation + (1 - alpha) * preRotation;
 }
 /////handusefunction///
 function mapToTarget(inputValue:any, targetValue = 90, outputValue = 0.9, width = 10) {
@@ -225,22 +254,25 @@ function Avatar({ url }: { url: string }) {
       const pre1=nodes.LeftArm.rotation.x;
       const cur1=(rightshoulderrotation.y-15)/155*Math.PI-Math.PI/2-0.1;
       const alpha1=0.2;
-      const pre1L=nodes.LeftArm.rotation.z;
-      const cur1L=(leftshoulderrotation.z+1.75)/0.9*0.8+3.14/7;
-      const alpha1L=0.2;
       
-      nodes.LeftArm.rotation.set(alpha1 * cur1 + (1 - alpha1) * pre1, leftShoulderRotation1.y/100, alpha1L * cur1L + (1 - alpha1L) * pre1L);
+      nodes.LeftArm.rotation.set(interpolateRotation(pre1, cur1, alpha1), 0.0, 0);
       ////
       //nodes.RightForeArm.rotation.set(3.14/200,3.14/200,-rightshoulderrotation.z/(180 / Math.PI));
       const pre2=nodes.LeftForeArm.rotation.y;
-      const cur2=-0.9*mapToTarget(rightshoulderrotation.x);
+      const cur2=0;//-0.9*mapToTarget(rightshoulderrotation.x);
       const alpha2=1/(Math.abs(pre2-cur2)+5);
       const pre3=nodes.LeftForeArm.rotation.x;
-      const cur3=-0.5+(leftshoulderrotation.z+1.75)/0.9*0.5;
+      const cur3=0;//-0.5+(leftshoulderrotation.z+1.75)/0.9*0.5;
       const alpha3=1/(Math.abs(pre3-cur3)+5);
+      const pre4=nodes.LeftForeArm.rotation.x;
+      const cur4=mapRange(rightshoulderrotation.z, -60, 30, 0, -Math.PI/2);
+      const alpha4=1/(Math.abs(pre4-cur4)+2);
       //const alpha2=0.2;
       if (Math.abs(pre1-cur1)<90){
-        nodes.LeftForeArm.rotation.set(alpha3 * cur3 + (1 - alpha3) * pre3,alpha2 * cur2 + (1 - alpha2) * pre2,rightshoulderrotation.z/(180 / Math.PI)-0.4);
+        const value= rightshoulderrotation.z
+        if (Math.abs(value)<100){
+          nodes.LeftForeArm.rotation.set(interpolateRotation(pre4, cur4, alpha4),-0.9,3.14/2+0.4);
+        }
       }
       //////////////////////////////////////////
       nodes.LeftHand.rotation.set(-0.000,0.8*mapToTarget(rightshoulderrotation.x),0);
@@ -250,19 +282,20 @@ function Avatar({ url }: { url: string }) {
       }
     }
   });
-/*
+
   return (
     <>
       <primitive object={scene} position={[0, -1.75, 3]} />
       <Html>
-        <div ref={rightShoulderRef} style={{ color: 'white', backgroundColor: 'black', padding: '5px', borderRadius: '5px' }} >
-          Right Shoulder Rotation: x: 0, y: 0, z: 0
-        </div>
-      </Html>
+      <div ref={rightShoulderRef} style={{ color: 'white', backgroundColor: 'black', padding: '5px', borderRadius: '5px', transform: 'translateX(-180px)' }} >
+        Right Shoulder Rotation: x: 0, y: 0, z: 0
+      </div>
+    </Html>
     </>
   );
 }
-*/
+
+/*
 
   return (
     <>
@@ -270,7 +303,7 @@ function Avatar({ url }: { url: string }) {
     </>
   );
 }
-
+*/
 function App() {
   const [url, setUrl] = useState<string>("https://models.readyplayer.me/667f09dba357b441c2124ac4.glb?morphTargets=ARKit&textureAtlas=1024");
   const { getRootProps } = useDropzone({
@@ -288,7 +321,7 @@ function App() {
     const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
     faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, options);
     poseLandmarker = await PoseLandmarker.createFromOptions(filesetResolver, poseoptions);     //xinjiade
-
+    handLandmarker = await HandLandmarker.createFromOptions(filesetResolver, handoptions); 
     video = document.getElementById("video") as HTMLVideoElement;
     navigator.mediaDevices.getUserMedia({
       video: { width: 1280, height: 720 },
@@ -305,8 +338,9 @@ function App() {
       lastVideoTime = video.currentTime;
       const faceLandmarkerResult = faceLandmarker.detectForVideo(video, nowInMs);
       const poseLandmarkerResult = poseLandmarker.detectForVideo(video, nowInMs);//xinjiade
+      const handLandmarkerResult = handLandmarker.detectForVideo(video, nowInMs);
       //console.log(poseLandmarkerResult)
-      console.log(faceLandmarkerResult)
+      console.log(handLandmarkerResult)
       if (faceLandmarkerResult.faceBlendshapes && faceLandmarkerResult.faceBlendshapes.length > 0 && faceLandmarkerResult.faceBlendshapes[0].categories) {
         blendshapes = faceLandmarkerResult.faceBlendshapes[0].categories;
 
@@ -332,27 +366,34 @@ function App() {
         righthandrotation = (calculateDirectionVector(rightwrist, rightelbow));
         ///
         const shouldertoshouder=(calculateDirectionVector(rightshoulder, leftshoulder));
-        const leftforearmvector = (calculateDirectionVector(leftelbow, leftwrist));
-        const L_forearmangle= calculateAngleBetweenVectors(shouldertoshouder,leftforearmvector)
+        const left_forearm_vector = (calculateDirectionVector(leftelbow, leftwrist));
+        const left_arm_vector = (calculateDirectionVector(leftshoulder, leftelbow));
+        const L_forearmangle= calculateAngleBetweenVectors(shouldertoshouder,left_forearm_vector);
         ////
 
         const angle3D = angleBetween3DCoords(leftyao, leftshoulder, leftelbow);
         const angle30 = angleBetween3DCoords(leftshoulder, leftelbow, leftwrist);
         const angleXY = angleBetween2DCoords(leftyao, leftshoulder, leftelbow, "xy");
         const angleYZ30 = angleBetween2DCoords(leftshoulder, leftelbow,leftwrist, "xy");
-        const angleZX = angleBetween2DCoords(leftyao, leftshoulder, leftelbow, "zx");
-        //const isLeftWristInFrame = leftwrist.visibility > 0.5 && leftWrist.presence > 0.5;
-        if (leftwrist.y<0.8){
-        rightshoulderrotation.x=L_forearmangle.degrees;
-        leftshoulderrotation.z=leftwrist.z;
-        }
-        else{
-          rightshoulderrotation.x=0;
-          leftshoulderrotation.z=-1.75;
-        }
+  
+        // if (leftwrist.y<100.8){
+        // rightshoulderrotation.x=L_forearmangle.degrees;
+        // leftshoulderrotation.z=leftwrist.z;
+        // }
+        // else{
+        //   rightshoulderrotation.x=0;
+        //   leftshoulderrotation.z=-1.75;
+        // }
+        const wavehand_sign=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector)/Math.abs(calculateCrossProductZComponent(left_arm_vector,left_forearm_vector));
         rightshoulderrotation.y=angleXY;
-        rightshoulderrotation.z=angleYZ30;
-        //rightshoulderrotation.y=leftwrist.z;
+        if (angleYZ30>50){
+          rightshoulderrotation.z=(170-angleYZ30)*wavehand_sign;
+        }
+        //rightshoulderrotation.x=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector)
+        // rightshoulderrotation.x=leftwrist.x;
+        // rightshoulderrotation.y=leftwrist.y;
+        // rightshoulderrotation.z=leftwrist.z;
+
         
 
         
@@ -377,7 +418,7 @@ function App() {
       </div>
       <input className='url' type="text" placeholder="Paste RPM avatar URL" onChange={handleOnChange} />
       <video className='camera-feed' id="video" autoPlay></video>
-      <Canvas style={{ height: 600 }} camera={{ fov: 25 }} shadows>
+      <Canvas style={{ height: 600 }} camera={{ fov: 55 }} shadows>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} color={new Color(1, 1, 0)} intensity={0.5} castShadow />
         <pointLight position={[-10, 0, 10]} color={new Color(1, 0, 0)} intensity={0.5} castShadow />
