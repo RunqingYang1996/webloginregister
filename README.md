@@ -23,20 +23,39 @@ let lastVideoTime = -1;
 let blendshapes: any[] = [];
 let rotation: Euler;
 let testangle: Number;
-///////////////////////////////////
-let leftshoulderposition: Vector3;
-let leftshoulderrotation: Vector3= new Vector3();
-let rightshoulderposition: Vector3;
+let righthandnumber:any;
+let lefthandnumber:any;
 let rightshoulderrotation: Vector3= new Vector3();
-let leftarmposition: Vector3;
-let leftarmrotation: Vector3= new Vector3();
-let rightarmposition: Vector3;
-let rightarmrotation: Vector3= new Vector3();
-let lefthandposition: Vector3;
+/////////////renew//////////////////////
+let leftshoulder_updown:any=0;
+let leftforearm_LR:Vector3= new Vector3();
+let rightshoulder_updown:any=0;
+let rightforearm_LR:Vector3= new Vector3();
+///////////////////////
+//let leftshoulderrotation: Vector3= new Vector3();
+let leftforearmrotation_idle: Vector3= new Vector3();
 let lefthandrotation: Vector3= new Vector3();
-//let righthandposition: Vector3= new Vector3();
-let righthandrotation: Vector3= new Vector3()
+let lefthandtwist: Vector3= new Vector3();
+let rightforearmrotation_idle: Vector3= new Vector3();
+let righthandrotation: Vector3= new Vector3();
+let righthandtwist: Vector3= new Vector3();
 ///////////////////////////////
+
+///////lefthand///////////
+let left_index_finger_rotation: Vector3= new Vector3()
+let left_middle_finger_rotation: Vector3= new Vector3()
+let left_ring_finger_rotation: Vector3= new Vector3()
+let left_pinky_finger_rotation: Vector3= new Vector3()
+let left_thumb_finger_rotation: Vector3= new Vector3()
+///////////////////////
+
+///////righthand///////////
+let right_index_finger_rotation: Vector3= new Vector3()
+let right_middle_finger_rotation: Vector3= new Vector3()
+let right_ring_finger_rotation: Vector3= new Vector3()
+let right_pinky_finger_rotation: Vector3= new Vector3()
+let right_thumb_finger_rotation: Vector3= new Vector3()
+///////////////////////////
 let headMesh: any[] = [];
 
 const options: FaceLandmarkerOptions = {
@@ -90,6 +109,10 @@ function calculateCrossProductZComponent(vectorA:Vector3, vectorB:Vector3) {
 }
 
 function vectorMagnitude(v:Landmark) {
+  return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+function vector3Magnitude(v:Vector3) {
   return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
@@ -211,72 +234,119 @@ function Avatar({ url }: { url: string }) {
           }
         });
       });
-
+      /* =====================
+        = Section: head+body(fixed)    =
+        ===================== */
       nodes.Head.rotation.set(rotation.x, rotation.y, rotation.z);
       nodes.Neck.rotation.set(rotation.x / 3 + 0.3, rotation.y / 3, rotation.z / 3);
       nodes.Spine1.rotation.set(rotation.x / 3, rotation.y / 3, rotation.z / 3);
-      //nodes.LeftArm.rotation.set(rotation.x/0.7, rotation.x/0.7, rotation.z/2);
-      //nodes.LeftArm.rotation.set(leftshoulderrotation.x/1, leftshoulderrotation.y/1, leftshoulderrotation.z/1);
-      //nodes.RightArm.rotation.set(rightshoulderrotation.x/200+0.5, rightshoulderrotation.y/200+1.0, rightshoulderrotation.z/200-1.0);
-      //nodes.LeftForeArm.rotation.set(leftarmrotation.x/100, leftarmrotation.y/100, -leftarmrotation.z/100+3.14/2);
-      //nodes.RightForeArm.rotation.set(rightarmrotation.x, -rightarmrotation.y, -rightarmrotation.z);
-      //nodes.RightForeArm.rotation.set(rightarmrotation.x/200-1.5, rightarmrotation.y/200+0.9, rightarmrotation.z/200-2.5);
-      //nodes.LeftHand.rotation.set(lefthandrotation.x/1000, lefthandrotation.y/1000, lefthandrotation.z/1000);
-      //nodes.RightHand.rotation.set(righthandrotation.x/3, righthandrotation.y/3, righthandrotation.z/3);
-      //nodes.RightHand.position.set(righthandposition.x/2, righthandposition.y/2, righthandposition.z/2);
+
 
 
 
       ///////////////////////////
-      const modelLeftShoulder = nodes.LeftShoulder.position;
-      const modelRightShoulder = nodes.RightShoulder.position;
-      const modelLeftElbow = nodes.LeftForeArm.position;
-      const modelRightElbow = nodes.RightForeArm.position;
-      const modelLeftWrist = nodes.LeftHand.position;
-      const modelRightWrist = nodes.RightHand.position;
 
-      const modelLeftUpperArm = calculateDirectionVector(modelLeftShoulder, modelLeftElbow);
-      const modelRightUpperArm = calculateDirectionVector(modelRightShoulder, modelRightElbow);
-      const modelLeftForeArm = calculateDirectionVector(modelLeftElbow, modelLeftWrist);
-      const modelRightForeArm = calculateDirectionVector(modelRightElbow, modelRightWrist);
-
-      // 计算从模型向量到 MediaPipe 向量的旋转
-      const leftShoulderRotation1 = fromToRotation(modelLeftUpperArm, leftshoulderrotation);
-      const rightShoulderRotation1 = fromToRotation(modelRightUpperArm, rightshoulderrotation);
-      const leftArmRotation1 = fromToRotation(modelLeftForeArm, leftarmrotation);
-      const rightArmRotation1 = fromToRotation(modelRightForeArm, rightarmrotation);
-      const leftHandRotation1 = fromToRotation(modelLeftForeArm, lefthandrotation);
-      const rightHandRotation1 = fromToRotation(modelRightForeArm, righthandrotation);
-      //nodes.LeftArm.rotation.set(leftShoulderRotation1.x/100, leftShoulderRotation1.y/100, leftShoulderRotation1.z/100+3.14/2);
-      //nodes.LeftForeArm.rotation.set(-leftArmRotation1.x/1, leftArmRotation1.y/1, leftArmRotation1.z);
-      //nodes.RightArm.rotation.set(rightShoulderRotation1.x/100, rightShoulderRotation1.y/100, rightShoulderRotation1.z/100-3.14/2);
-      //####nodes.RightForeArm.rotation.set(3.14/200,3.14/200,-3.14/2-0.7);
+      /* =====================
+        = Section: left_part_of_half_body    =
+        ===================== */
+      /////////Leftarm_Up_and_down////////////////
       const pre1=nodes.LeftArm.rotation.x;
-      const cur1=(rightshoulderrotation.y-15)/155*Math.PI-Math.PI/2-0.1;
+      const cur1=(leftshoulder_updown-15)/155*Math.PI-Math.PI/2-0.1;
       const alpha1=0.2;
       
-      nodes.LeftArm.rotation.set(interpolateRotation(pre1, cur1, alpha1), 0.0, 0);
-      ////
-      //nodes.RightForeArm.rotation.set(3.14/200,3.14/200,-rightshoulderrotation.z/(180 / Math.PI));
-      const pre2=nodes.LeftForeArm.rotation.y;
-      const cur2=0;//-0.9*mapToTarget(rightshoulderrotation.x);
-      const alpha2=1/(Math.abs(pre2-cur2)+5);
-      const pre3=nodes.LeftForeArm.rotation.x;
-      const cur3=0;//-0.5+(leftshoulderrotation.z+1.75)/0.9*0.5;
-      const alpha3=1/(Math.abs(pre3-cur3)+5);
+      nodes.LeftArm.rotation.set(interpolateRotation(pre1, cur1, alpha1), 0, 0.3);
+      /////////Rightarm_Up_and_down////////////////
+      const pre1R=nodes.RightArm.rotation.x;
+      const cur1R=(rightshoulder_updown-15)/155*Math.PI-Math.PI/2-0.1;
+      const alpha1R=0.2;
+      
+      nodes.RightArm.rotation.set(interpolateRotation(pre1R, cur1R, alpha1R), 0, -0.3);
+      ///////////////////////////////////////////////
+      /////////Leftforearm_waving////////////////
       const pre4=nodes.LeftForeArm.rotation.x;
-      const cur4=mapRange(rightshoulderrotation.z, -60, 30, 0, -Math.PI/2);
+      const cur4=mapRange(leftforearm_LR.x, 8, -8, -Math.PI/4, Math.PI/4);
       const alpha4=1/(Math.abs(pre4-cur4)+2);
-      //const alpha2=0.2;
-      if (Math.abs(pre1-cur1)<90){
-        const value= rightshoulderrotation.z
-        if (Math.abs(value)<100){
-          nodes.LeftForeArm.rotation.set(interpolateRotation(pre4, cur4, alpha4),-0.9,3.14/2+0.4);
-        }
-      }
+
+      nodes.LeftForeArm.rotation.set(interpolateRotation(pre4, cur4, alpha4),0,2.4*leftforearmrotation_idle.z);
+      /////////Rightforearm_waving////////////////
+      const pre4R=nodes.RightForeArm.rotation.x;
+      const cur4R=mapRange(rightforearm_LR.x, -8, 8, -Math.PI/4, Math.PI/4);
+      const alpha4R=1/(Math.abs(pre4R-cur4R)+2);
+
+      nodes.RightForeArm.rotation.set(interpolateRotation(pre4R, cur4R, alpha4R),0,-2.4*rightforearmrotation_idle.z);
+
       //////////////////////////////////////////
-      nodes.LeftHand.rotation.set(-0.000,0.8*mapToTarget(rightshoulderrotation.x),0);
+      ///lefthandrotate_and_twist///////
+      ///leftpalmoperation////
+      const pre5=nodes.LeftHand.rotation.y;
+      const cur5=mapRange(lefthandrotation.z, -0.4, 0.4, -1.9, 1.9);
+      const alpha5=1/(Math.abs(pre5-cur5)+2);
+      /////
+      const pre6=nodes.LeftHand.rotation.x;
+      const cur6=mapRange(lefthandtwist.x, -3, 3, -0.9, 0.9);
+      const alpha6=1/(Math.abs(pre6-cur6)+2);
+      nodes.LeftHand.rotation.set(interpolateRotation(pre6, cur6, alpha6),interpolateRotation(pre5, cur5, alpha5),0);//zhengfu1.2
+      //////////////////////////
+      //////////////////////////////////////////
+      ///righthandrotate_and_twist///////
+      ///rightpalmoperation////
+      const pre5R = nodes.RightHand.rotation.y;
+      const cur5R = mapRange(righthandrotation.z, -0.4, 0.4, -1.9, 1.2);
+      const alpha5R = 1 / (Math.abs(pre5R - cur5R) + 2);
+      /////
+      const pre6R = nodes.RightHand.rotation.x;
+      const cur6R = mapRange(righthandtwist.x, 3, -3, -0.9, 0.9);
+      const alpha6R = 1 / (Math.abs(pre6R - cur6R) + 2);
+      nodes.RightHand.rotation.set(-interpolateRotation(pre6R, cur6R, alpha6R), interpolateRotation(pre5R, cur5R, alpha5R) , 0); //zhengfu1.2
+//////////////////////////
+
+
+      ////////lefthand////////////
+      ///indexfinger////
+      nodes.LeftHandIndex1.rotation.set(left_index_finger_rotation.x*3.14/180,0,0);
+      nodes.LeftHandIndex2.rotation.set(left_index_finger_rotation.y*3.14/180,0,0);
+      nodes.LeftHandIndex3.rotation.set(left_index_finger_rotation.z*3.14/180,0,0);
+      ///middlefinger////
+      nodes.LeftHandMiddle1.rotation.set(left_middle_finger_rotation.x*3.14/180,0,0);
+      nodes.LeftHandMiddle2.rotation.set(left_middle_finger_rotation.y*3.14/180,0,0);
+      nodes.LeftHandMiddle3.rotation.set(left_middle_finger_rotation.z*3.14/180,0,0);
+      ////ringfinger/////
+      nodes.LeftHandRing1.rotation.set(left_ring_finger_rotation.x*3.14/180,0,0);
+      nodes.LeftHandRing2.rotation.set(left_ring_finger_rotation.y*3.14/180,0,0);
+      nodes.LeftHandRing3.rotation.set(left_ring_finger_rotation.z*3.14/180,0,0);
+      ///pinkyfinger////
+      nodes.LeftHandPinky1.rotation.set(left_pinky_finger_rotation.x*3.14/180,0,0);
+      nodes.LeftHandPinky2.rotation.set(left_pinky_finger_rotation.y*3.14/180,0,0);
+      nodes.LeftHandPinky3.rotation.set(left_pinky_finger_rotation.z*3.14/180,0,0);
+      ///thumbfinger////
+      nodes.LeftHandThumb1.rotation.set(0.3,0.3,0.3);
+      nodes.LeftHandThumb2.rotation.set(0,0,-left_thumb_finger_rotation.y*3.14/180);
+      nodes.LeftHandThumb3.rotation.set(0,0,-left_thumb_finger_rotation.z*3.14/180);
       //nodes.RightHand.rotation.set(-0.000,-1.9,-1.7);
+
+
+      ////////righthand////////////
+      ///indexfinger////
+      nodes.RightHandIndex1.rotation.set(right_index_finger_rotation.x*3.14/180,0,0);
+      nodes.RightHandIndex2.rotation.set(right_index_finger_rotation.y*3.14/180,0,0);
+      nodes.RightHandIndex3.rotation.set(right_index_finger_rotation.z*3.14/180,0,0);
+      ///middlefinger////
+      nodes.RightHandMiddle1.rotation.set(right_middle_finger_rotation.x*3.14/180,0,0);
+      nodes.RightHandMiddle2.rotation.set(right_middle_finger_rotation.y*3.14/180,0,0);
+      nodes.RightHandMiddle3.rotation.set(right_middle_finger_rotation.z*3.14/180,0,0);
+      ////ringfinger/////
+      nodes.RightHandRing1.rotation.set(right_ring_finger_rotation.x*3.14/180,0,0);
+      nodes.RightHandRing2.rotation.set(right_ring_finger_rotation.y*3.14/180,0,0);
+      nodes.RightHandRing3.rotation.set(right_ring_finger_rotation.z*3.14/180,0,0);
+      ///pinkyfinger////
+      nodes.RightHandPinky1.rotation.set(right_pinky_finger_rotation.x*3.14/180,0,0);
+      nodes.RightHandPinky2.rotation.set(right_pinky_finger_rotation.y*3.14/180,0,0);
+      nodes.RightHandPinky3.rotation.set(right_pinky_finger_rotation.z*3.14/180,0,0);
+      ///thumbfinger////
+      nodes.RightHandThumb1.rotation.set(0.3,-0.3,-0.3);
+      nodes.RightHandThumb2.rotation.set(0,0,right_thumb_finger_rotation.y*3.14/180);
+      nodes.RightHandThumb3.rotation.set(0,0,right_thumb_finger_rotation.z*3.14/180);
+
       if (rightShoulderRef.current) {
         rightShoulderRef.current.innerHTML = `Right Shoulder Rotation: x: ${rightshoulderrotation.x.toFixed(2)}, y: ${rightshoulderrotation.y.toFixed(2)}, z: ${rightshoulderrotation.z.toFixed(2)}`;
       }
@@ -287,7 +357,7 @@ function Avatar({ url }: { url: string }) {
     <>
       <primitive object={scene} position={[0, -1.75, 3]} />
       <Html>
-      <div ref={rightShoulderRef} style={{ color: 'white', backgroundColor: 'black', padding: '5px', borderRadius: '5px', transform: 'translateX(-180px)' }} >
+      <div ref={rightShoulderRef} style={{ color: 'white', backgroundColor: 'black', padding: '5px', borderRadius: '5px', transform: 'translateX(180px)' }} >
         Right Shoulder Rotation: x: 0, y: 0, z: 0
       </div>
     </Html>
@@ -340,7 +410,7 @@ function App() {
       const poseLandmarkerResult = poseLandmarker.detectForVideo(video, nowInMs);//xinjiade
       const handLandmarkerResult = handLandmarker.detectForVideo(video, nowInMs);
       //console.log(poseLandmarkerResult)
-      console.log(handLandmarkerResult)
+      //console.log(handLandmarkerResult)
       if (faceLandmarkerResult.faceBlendshapes && faceLandmarkerResult.faceBlendshapes.length > 0 && faceLandmarkerResult.faceBlendshapes[0].categories) {
         blendshapes = faceLandmarkerResult.faceBlendshapes[0].categories;
 
@@ -348,53 +418,246 @@ function App() {
         rotation = new Euler().setFromRotationMatrix(matrix);
       }
       if (poseLandmarkerResult.landmarks && poseLandmarkerResult.landmarks.length> 0 ) {
+        /* =====================
+        = Section: left arm fore—arm   =
+        ===================== */
 
         const leftshoulder = poseLandmarkerResult.landmarks[0][11];
-        const rightshoulder = poseLandmarkerResult.landmarks[0][12];
         const leftelbow = poseLandmarkerResult.landmarks[0][13];
-        const rightelbow = poseLandmarkerResult.landmarks[0][14];
         const leftwrist = poseLandmarkerResult.landmarks[0][15];
-        const rightwrist = poseLandmarkerResult.landmarks[0][16];
         const leftyao=poseLandmarkerResult.landmarks[0][23]
-        const leftwrist_world = poseLandmarkerResult.worldLandmarks[0][15];
-
-        leftshoulderrotation =(calculateDirectionVector(leftshoulder, leftelbow));
-        rightshoulderrotation = (calculateDirectionVector(rightshoulder, rightelbow));
-        leftarmrotation = (calculateDirectionVector(leftelbow, leftwrist));
-        rightarmrotation = (calculateDirectionVector(rightelbow, rightwrist));
-        lefthandrotation = (calculateDirectionVector(leftwrist, leftelbow));
-        righthandrotation = (calculateDirectionVector(rightwrist, rightelbow));
         ///
-        const shouldertoshouder=(calculateDirectionVector(rightshoulder, leftshoulder));
+        //rightshoulderrotation = (calculateDirectionVector(rightshoulder, rightelbow));
+        ///
         const left_forearm_vector = (calculateDirectionVector(leftelbow, leftwrist));
         const left_arm_vector = (calculateDirectionVector(leftshoulder, leftelbow));
-        const L_forearmangle= calculateAngleBetweenVectors(shouldertoshouder,left_forearm_vector);
         ////
 
-        const angle3D = angleBetween3DCoords(leftyao, leftshoulder, leftelbow);
-        const angle30 = angleBetween3DCoords(leftshoulder, leftelbow, leftwrist);
-        const angleXY = angleBetween2DCoords(leftyao, leftshoulder, leftelbow, "xy");
-        const angleYZ30 = angleBetween2DCoords(leftshoulder, leftelbow,leftwrist, "xy");
-  
-        // if (leftwrist.y<100.8){
-        // rightshoulderrotation.x=L_forearmangle.degrees;
-        // leftshoulderrotation.z=leftwrist.z;
-        // }
-        // else{
-        //   rightshoulderrotation.x=0;
-        //   leftshoulderrotation.z=-1.75;
-        // }
-        const wavehand_sign=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector)/Math.abs(calculateCrossProductZComponent(left_arm_vector,left_forearm_vector));
-        rightshoulderrotation.y=angleXY;
-        if (angleYZ30>50){
-          rightshoulderrotation.z=(170-angleYZ30)*wavehand_sign;
-        }
+        const leftshoulder_up_down_angleXY = angleBetween2DCoords(leftyao, leftshoulder, leftelbow, "xy");
+        leftshoulder_updown=leftshoulder_up_down_angleXY;
+        ////
+        const leftforearm_LR1=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector);
+        rightshoulderrotation.x=leftforearm_LR1*100;
+        leftforearm_LR.x=leftforearm_LR1*100;
+        ///////////////////
+        /* =====================
+        = Section: right arm fore—arm   =
+        ===================== */
+        const rightshoulder = poseLandmarkerResult.landmarks[0][12];
+        const rightelbow = poseLandmarkerResult.landmarks[0][14];
+        const rightwrist = poseLandmarkerResult.landmarks[0][16];
+        const rightyao=poseLandmarkerResult.landmarks[0][24]
+        ///
+        //rightshoulderrotation = (calculateDirectionVector(rightshoulder, rightelbow));
+        ///
+        const right_forearm_vector = (calculateDirectionVector(rightelbow, rightwrist));
+        const right_arm_vector = (calculateDirectionVector(rightshoulder, rightelbow));
+        ////
+
+        const rightshoulder_up_down_angleXY = angleBetween2DCoords(rightyao, rightshoulder, rightelbow, "xy");
+        rightshoulder_updown=rightshoulder_up_down_angleXY;
+        ////
+        const rightforearm_LR1=calculateCrossProductZComponent(right_arm_vector,right_forearm_vector);
+        rightshoulderrotation.x=rightforearm_LR1*100;
+        rightforearm_LR.x=rightforearm_LR1*100;
+
         //rightshoulderrotation.x=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector)
         // rightshoulderrotation.x=leftwrist.x;
         // rightshoulderrotation.y=leftwrist.y;
         // rightshoulderrotation.z=leftwrist.z;
 
-        
+
+        ////////lefthand___righthand//////////
+        leftforearmrotation_idle.z=0; //assume no hand deteted on screen, then forearmneeds to be idle position
+        rightforearmrotation_idle.z=0;//assume no hand deteted on screen, then forearmneeds to be idle position
+        if (handLandmarkerResult.landmarks && handLandmarkerResult.landmarks.length> 0 ) {
+          righthandnumber=-1;
+          lefthandnumber=-1;
+          if (handLandmarkerResult.handednesses[0][0].categoryName==='Left'){
+            righthandnumber=0;//this is true since google mixup the left and right
+            console.log(righthandnumber);
+          }
+          else{
+            lefthandnumber=0;
+          }
+          if (handLandmarkerResult.landmarks.length> 1 ) {
+            if (handLandmarkerResult.handednesses[1][0].categoryName==='Left'){
+              righthandnumber=1;//this is true since google mixup the left and right
+            }
+            else{
+              lefthandnumber=1;
+            }
+          }
+          if (lefthandnumber!==-1){
+            leftforearmrotation_idle.z=1;
+            const lefthandroot=handLandmarkerResult.landmarks[lefthandnumber][0];
+            ////index_finger///////////////////////////
+            const index_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][5];
+            const index_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][6];
+            const index_finger_position3=handLandmarkerResult.landmarks[lefthandnumber][7];
+            const index_finger_position4=handLandmarkerResult.landmarks[lefthandnumber][8];
+            const indexfinger_3d_roation0 = angleBetween3DCoords(lefthandroot, index_finger_position1, index_finger_position2);
+            const indexfinger_3d_roation1 = angleBetween3DCoords(index_finger_position1, index_finger_position2, index_finger_position3);
+            const indexfinger_3d_roation2 = angleBetween3DCoords(index_finger_position2, index_finger_position3, index_finger_position4);
+            left_index_finger_rotation.x=indexfinger_3d_roation0 ;
+            left_index_finger_rotation.y=indexfinger_3d_roation1 ;
+            left_index_finger_rotation.z=indexfinger_3d_roation2 ;
+            ////middle_finger///////////////////////////
+            const middle_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][9];
+            const middle_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][10];
+            const middle_finger_position3=handLandmarkerResult.landmarks[lefthandnumber][11];
+            const middle_finger_position4=handLandmarkerResult.landmarks[lefthandnumber][12];
+            const middlefinger_3d_roation0 = angleBetween3DCoords(lefthandroot, middle_finger_position1, middle_finger_position2);
+            const middlefinger_3d_roation1 = angleBetween3DCoords(middle_finger_position1, middle_finger_position2, middle_finger_position3);
+            const middlefinger_3d_roation2 = angleBetween3DCoords(middle_finger_position2, middle_finger_position3, middle_finger_position4);
+            left_middle_finger_rotation.x=middlefinger_3d_roation0 ;
+            left_middle_finger_rotation.y=middlefinger_3d_roation1 ;
+            left_middle_finger_rotation.z=middlefinger_3d_roation2 ;
+            ////ring_finger///////////////////////////
+            const ring_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][13];
+            const ring_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][14];
+            const ring_finger_position3=handLandmarkerResult.landmarks[lefthandnumber][15];
+            const ring_finger_position4=handLandmarkerResult.landmarks[lefthandnumber][16];
+            const ringfinger_3d_roation0 = angleBetween3DCoords(lefthandroot, ring_finger_position1, ring_finger_position2);
+            const ringfinger_3d_roation1 = angleBetween3DCoords(ring_finger_position1, ring_finger_position2, ring_finger_position3);
+            const ringfinger_3d_roation2 = angleBetween3DCoords(ring_finger_position2, ring_finger_position3, ring_finger_position4);
+            left_ring_finger_rotation.x=ringfinger_3d_roation0 ;
+            left_ring_finger_rotation.y=ringfinger_3d_roation1 ;
+            left_ring_finger_rotation.z=ringfinger_3d_roation2 ;
+
+            ////pinky_finger///////////////////////////
+            const pinky_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][17];
+            const pinky_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][18];
+            const pinky_finger_position3=handLandmarkerResult.landmarks[lefthandnumber][19];
+            const pinky_finger_position4=handLandmarkerResult.landmarks[lefthandnumber][20];
+            const pinkyfinger_3d_roation0 = angleBetween3DCoords(lefthandroot, pinky_finger_position1, pinky_finger_position2);
+            const pinkyfinger_3d_roation1 = angleBetween3DCoords(pinky_finger_position1, pinky_finger_position2, pinky_finger_position3);
+            const pinkyfinger_3d_roation2 = angleBetween3DCoords(pinky_finger_position2, pinky_finger_position3, pinky_finger_position4);
+            left_pinky_finger_rotation.x=pinkyfinger_3d_roation0 ;
+            left_pinky_finger_rotation.y=pinkyfinger_3d_roation1 ;
+            left_pinky_finger_rotation.z=pinkyfinger_3d_roation2 ;
+
+            ////pinky_finger///////////////////////////
+            const thumb_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][1];
+            const thumb_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][2];
+            const thumb_finger_position3=handLandmarkerResult.landmarks[lefthandnumber][3];
+            const thumb_finger_position4=handLandmarkerResult.landmarks[lefthandnumber][4];
+            //const thumbfinger_3d_roation0 = angleBetween3DCoords();
+            const thumbfinger_3d_roation1 = angleBetween3DCoords(thumb_finger_position1, thumb_finger_position2, thumb_finger_position3);
+            const thumbfinger_3d_roation2 = angleBetween3DCoords(thumb_finger_position2, thumb_finger_position3, thumb_finger_position4);
+            left_thumb_finger_rotation.x=0 ;
+            left_thumb_finger_rotation.y=thumbfinger_3d_roation1 ;
+            left_thumb_finger_rotation.z=thumbfinger_3d_roation2 ;
+            //wristroattion/////////
+            const leftrootup = (calculateDirectionVector(lefthandroot, middle_finger_position1));
+            const leftpalm=(calculateDirectionVector(middle_finger_position1, pinky_finger_position1));
+            const lefthandrotate=calculateCrossProductZComponent(leftrootup,leftpalm)
+            lefthandrotation.x=lefthandrotate;
+            lefthandrotation.y=vector3Magnitude(leftpalm)/vector3Magnitude(leftrootup);
+            lefthandrotation.z=lefthandrotation.x*lefthandrotation.y*100;
+            /////////
+            const leftelbow_handtwist = poseLandmarkerResult.landmarks[0][13];
+            const leftwrist_handtwist = handLandmarkerResult.landmarks[lefthandnumber][0];
+            const leftmiddlefingertop_handtwist = handLandmarkerResult.landmarks[lefthandnumber][9];
+            const lefthandtwistvector1=(calculateDirectionVector(leftelbow_handtwist, leftwrist_handtwist));
+            const lefthandtwistvector2=(calculateDirectionVector(leftwrist_handtwist, leftmiddlefingertop_handtwist));
+            const lefthand_twist=calculateCrossProductZComponent(lefthandtwistvector1,lefthandtwistvector2)
+            lefthandtwist.x=lefthand_twist*100;
+
+
+
+
+
+          }
+          else{
+            leftforearmrotation_idle.z=0;
+          }
+          if (righthandnumber!==-1){
+            rightforearmrotation_idle.z=1;
+            ////////////////////////
+            const righthandroot = handLandmarkerResult.landmarks[righthandnumber][0];
+            ////index_finger///////////////////////////
+            const index_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][5];
+            const index_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][6];
+            const index_finger_position3R = handLandmarkerResult.landmarks[righthandnumber][7];
+            const index_finger_position4R = handLandmarkerResult.landmarks[righthandnumber][8];
+            const indexfinger_3d_roation0R = angleBetween3DCoords(righthandroot, index_finger_position1R, index_finger_position2R);
+            const indexfinger_3d_roation1R = angleBetween3DCoords(index_finger_position1R, index_finger_position2R, index_finger_position3R);
+            const indexfinger_3d_roation2R = angleBetween3DCoords(index_finger_position2R, index_finger_position3R, index_finger_position4R);
+            right_index_finger_rotation.x = indexfinger_3d_roation0R;
+            right_index_finger_rotation.y = indexfinger_3d_roation1R;
+            right_index_finger_rotation.z = indexfinger_3d_roation2R;
+            ////middle_finger///////////////////////////
+            const middle_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][9];
+            const middle_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][10];
+            const middle_finger_position3R = handLandmarkerResult.landmarks[righthandnumber][11];
+            const middle_finger_position4R = handLandmarkerResult.landmarks[righthandnumber][12];
+            const middlefinger_3d_roation0R = angleBetween3DCoords(righthandroot, middle_finger_position1R, middle_finger_position2R);
+            const middlefinger_3d_roation1R = angleBetween3DCoords(middle_finger_position1R, middle_finger_position2R, middle_finger_position3R);
+            const middlefinger_3d_roation2R = angleBetween3DCoords(middle_finger_position2R, middle_finger_position3R, middle_finger_position4R);
+            right_middle_finger_rotation.x = middlefinger_3d_roation0R;
+            right_middle_finger_rotation.y = middlefinger_3d_roation1R;
+            right_middle_finger_rotation.z = middlefinger_3d_roation2R;
+            ////ring_finger///////////////////////////
+            const ring_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][13];
+            const ring_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][14];
+            const ring_finger_position3R = handLandmarkerResult.landmarks[righthandnumber][15];
+            const ring_finger_position4R = handLandmarkerResult.landmarks[righthandnumber][16];
+            const ringfinger_3d_roation0R = angleBetween3DCoords(righthandroot, ring_finger_position1R, ring_finger_position2R);
+            const ringfinger_3d_roation1R = angleBetween3DCoords(ring_finger_position1R, ring_finger_position2R, ring_finger_position3R);
+            const ringfinger_3d_roation2R = angleBetween3DCoords(ring_finger_position2R, ring_finger_position3R, ring_finger_position4R);
+            right_ring_finger_rotation.x = ringfinger_3d_roation0R;
+            right_ring_finger_rotation.y = ringfinger_3d_roation1R;
+            right_ring_finger_rotation.z = ringfinger_3d_roation2R;
+
+            ////pinky_finger///////////////////////////
+            const pinky_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][17];
+            const pinky_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][18];
+            const pinky_finger_position3R = handLandmarkerResult.landmarks[righthandnumber][19];
+            const pinky_finger_position4R = handLandmarkerResult.landmarks[righthandnumber][20];
+            const pinkyfinger_3d_roation0R = angleBetween3DCoords(righthandroot, pinky_finger_position1R, pinky_finger_position2R);
+            const pinkyfinger_3d_roation1R = angleBetween3DCoords(pinky_finger_position1R, pinky_finger_position2R, pinky_finger_position3R);
+            const pinkyfinger_3d_roation2R = angleBetween3DCoords(pinky_finger_position2R, pinky_finger_position3R, pinky_finger_position4R);
+            right_pinky_finger_rotation.x = pinkyfinger_3d_roation0R;
+            right_pinky_finger_rotation.y = pinkyfinger_3d_roation1R;
+            right_pinky_finger_rotation.z = pinkyfinger_3d_roation2R;
+
+            ////thumb_finger///////////////////////////
+            const thumb_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][1];
+            const thumb_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][2];
+            const thumb_finger_position3R = handLandmarkerResult.landmarks[righthandnumber][3];
+            const thumb_finger_position4R = handLandmarkerResult.landmarks[righthandnumber][4];
+            //const thumbfinger_3d_roation0 = angleBetween3DCoords();
+            const thumbfinger_3d_roation1R = angleBetween3DCoords(thumb_finger_position1R, thumb_finger_position2R, thumb_finger_position3R);
+            const thumbfinger_3d_roation2R = angleBetween3DCoords(thumb_finger_position2R, thumb_finger_position3R, thumb_finger_position4R);
+            right_thumb_finger_rotation.x = 0;
+            right_thumb_finger_rotation.y = thumbfinger_3d_roation1R;
+            right_thumb_finger_rotation.z = thumbfinger_3d_roation2R;
+            //wristroattion/////////
+            const rightrootup = (calculateDirectionVector(righthandroot, middle_finger_position1R));
+            const rightpalm = (calculateDirectionVector(middle_finger_position1R, pinky_finger_position1R));
+            const righthandrotate = calculateCrossProductZComponent(rightrootup, rightpalm)
+            righthandrotation.x = righthandrotate;
+            righthandrotation.y = vector3Magnitude(rightpalm) / vector3Magnitude(rightrootup);
+            righthandrotation.z = righthandrotation.x * righthandrotation.y * 100;
+            /////////
+            const rightelbow_handtwist = poseLandmarkerResult.landmarks[0][14];
+            const rightwrist_handtwist = handLandmarkerResult.landmarks[righthandnumber][0];
+            const rightmiddlefingertop_handtwist = handLandmarkerResult.landmarks[righthandnumber][9];
+            const righthandtwistvector1 = (calculateDirectionVector(rightelbow_handtwist, rightwrist_handtwist));
+            const righthandtwistvector2 = (calculateDirectionVector(rightwrist_handtwist, rightmiddlefingertop_handtwist));
+            const righthand_twist = calculateCrossProductZComponent(righthandtwistvector1, righthandtwistvector2)
+            righthandtwist.x = righthand_twist * 100;
+
+            
+
+
+          }
+          else{
+            rightforearmrotation_idle.z=0;
+          }
+        }
+
 
         
       }
@@ -418,7 +681,7 @@ function App() {
       </div>
       <input className='url' type="text" placeholder="Paste RPM avatar URL" onChange={handleOnChange} />
       <video className='camera-feed' id="video" autoPlay></video>
-      <Canvas style={{ height: 600 }} camera={{ fov: 55 }} shadows>
+      <Canvas style={{ height: 600 }} camera={{ fov: 25 }} shadows>
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} color={new Color(1, 1, 0)} intensity={0.5} castShadow />
         <pointLight position={[-10, 0, 10]} color={new Color(1, 0, 0)} intensity={0.5} castShadow />
