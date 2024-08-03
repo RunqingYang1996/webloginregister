@@ -29,8 +29,10 @@ let rightshoulderrotation: Vector3= new Vector3();
 /////////////renew//////////////////////
 let leftshoulder_updown:any=0;
 let leftforearm_LR:Vector3= new Vector3();
+let leftforearm_FB:Vector3= new Vector3();
 let rightshoulder_updown:any=0;
 let rightforearm_LR:Vector3= new Vector3();
+let rightforearm_FB:Vector3= new Vector3();
 ///////////////////////
 //let leftshoulderrotation: Vector3= new Vector3();
 let leftforearmrotation_idle: Vector3= new Vector3();
@@ -266,14 +268,20 @@ function Avatar({ url }: { url: string }) {
       const pre4=nodes.LeftForeArm.rotation.x;
       const cur4=mapRange(leftforearm_LR.x, 8, -8, -Math.PI/4, Math.PI/4);
       const alpha4=1/(Math.abs(pre4-cur4)+2);
+      const pre4wave=nodes.LeftForeArm.rotation.z;
+      const cur4wave=mapRange(leftforearm_FB.z, 0.6, 1, 0, 0.4);
+      const alpha4wave=1/(Math.abs(pre4wave-cur4wave)+1);
 
-      nodes.LeftForeArm.rotation.set(interpolateRotation(pre4, cur4, alpha4),0,2.4*leftforearmrotation_idle.z);
+      nodes.LeftForeArm.rotation.set(interpolateRotation(pre4, cur4, alpha4),0,(2.4-cur4wave)*leftforearmrotation_idle.z);
       /////////Rightforearm_waving////////////////
       const pre4R=nodes.RightForeArm.rotation.x;
       const cur4R=mapRange(rightforearm_LR.x, -8, 8, -Math.PI/4, Math.PI/4);
       const alpha4R=1/(Math.abs(pre4R-cur4R)+2);
+      const pre4Rwave=nodes.RightForeArm.rotation.z;
+      const cur4Rwave=mapRange(rightforearm_FB.z, 0.6, 1, 0, 0.4);
+      const alpha4Rwave=1/(Math.abs(pre4Rwave-cur4Rwave)+2);
 
-      nodes.RightForeArm.rotation.set(interpolateRotation(pre4R, cur4R, alpha4R),0,-2.4*rightforearmrotation_idle.z);
+      nodes.RightForeArm.rotation.set(interpolateRotation(pre4R, cur4R, alpha4R),0,(-2.4+cur4Rwave)*rightforearmrotation_idle.z);
 
       //////////////////////////////////////////
       ///lefthandrotate_and_twist///////
@@ -437,7 +445,7 @@ function App() {
         leftshoulder_updown=leftshoulder_up_down_angleXY;
         ////
         const leftforearm_LR1=calculateCrossProductZComponent(left_arm_vector,left_forearm_vector);
-        rightshoulderrotation.x=leftforearm_LR1*100;
+        
         leftforearm_LR.x=leftforearm_LR1*100;
         ///////////////////
         /* =====================
@@ -491,6 +499,7 @@ function App() {
           if (lefthandnumber!==-1){
             leftforearmrotation_idle.z=1;
             const lefthandroot=handLandmarkerResult.landmarks[lefthandnumber][0];
+            leftforearm_FB.z=lefthandroot.y;
             ////index_finger///////////////////////////
             const index_finger_position1=handLandmarkerResult.landmarks[lefthandnumber][5];
             const index_finger_position2=handLandmarkerResult.landmarks[lefthandnumber][6];
@@ -574,8 +583,10 @@ function App() {
           }
           if (righthandnumber!==-1){
             rightforearmrotation_idle.z=1;
+            
             ////////////////////////
             const righthandroot = handLandmarkerResult.landmarks[righthandnumber][0];
+            rightforearm_FB.z=righthandroot.y;
             ////index_finger///////////////////////////
             const index_finger_position1R = handLandmarkerResult.landmarks[righthandnumber][5];
             const index_finger_position2R = handLandmarkerResult.landmarks[righthandnumber][6];
